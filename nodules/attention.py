@@ -3,10 +3,13 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from rope import get_rotary_matrix
+from nodules.rope import get_rotary_matrix
 
 
 class RoPECausalAttention(nn.Module):
+    """
+    Causal attention with RoPE embeddings
+    """
     def __init__(self, hidden_size, max_seq_len=1000):
         super().__init__()
         self.q = nn.Linear(hidden_size, hidden_size, bias=False)
