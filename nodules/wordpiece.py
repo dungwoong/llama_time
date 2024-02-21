@@ -31,7 +31,7 @@ class WordPiece:
             word: [c if i == 0 else f"##{c}" for i, c in enumerate(word)]
             for word in self.word_freqs.keys()
         }
-        self.vocab, self.splits = vocab, splits
+        self.vocab, self.splits = set(vocab), splits
 
     def _compute_pair_scores(self):
         """
@@ -95,7 +95,7 @@ class WordPiece:
                 if best_pair[1].startswith('##')
                 else best_pair[0] + best_pair[1]
             )
-            self.vocab.append(new_token)
+            self.vocab.add(new_token)
 
     def _encode_word(self, word):
         """

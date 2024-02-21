@@ -41,5 +41,6 @@ def test_wordpiece():
     wp = wordpiece.WordPiece(16)
     wp.fit(word_counts)
     assert len(wp.vocab) == 16
+    assert isinstance(wp.vocab, set)
 
     assert wp.tokenize(['hello', 'man', 'lol']) == ['he', '##l', '##l', '##o', 'm', '##a', '##n', '[UNK]']
