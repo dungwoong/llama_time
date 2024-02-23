@@ -12,6 +12,8 @@ class WordPiece:
         self.vocab_size = vocab_size
         self.vocab = None  # vocab
         self.splits = None  # word : split word
+        self.itos = None
+        self.stoi = None
 
     def _create_alphabet(self):
         """
@@ -117,6 +119,10 @@ class WordPiece:
                 word = f"##{word}"
         return tokens
 
+    def _make_indices(self):
+        self.itos = {i: s for i, s in enumerate(self.vocab)}
+        self.stoi = {self.itos[i]: i for i in self.itos}
+
     def fit(self, word_freqs):
         self.word_freqs = word_freqs
         self._create_alphabet()
@@ -128,5 +134,26 @@ class WordPiece:
         :param text: a list of words
         :return: a list of tokens
         """
-        encoded_words = [self._encode_word(word) for word in text]
+        if ' ' in self.vocab:
+            encoded_words = [self._encode_word(word) + [' '] for word in text]
+            encoded_words = encoded_words[:-1]
+        else:
+            encoded_words = [self._encode_word(word) for word in text]
         return sum(encoded_words, [])
+
+    def encode(self, text):
+        """
+        Encodes text, returning a list of indices
+        :param text:
+        :return:
+        """
+        tokens = self.tokenize(text)
+        return [self.stoi[t] for t in tokens]
+
+    def decode(self, indices):
+        """
+        Decodes a list of token indices to words
+        :param indices:
+        :return:
+        """
+        return ''.join(self.itos[i].replace('##', '') for i in indices)
