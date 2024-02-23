@@ -44,3 +44,18 @@ def test_wordpiece():
     assert isinstance(wp.vocab, set)
 
     assert wp.tokenize(['hello', 'man', 'lol']) == ['he', '##l', '##l', '##o', 'm', '##a', '##n', '[UNK]']
+
+
+def test_llama():
+    m = model.LLaMAModel(config={
+        'vocab_size': 4096,
+        'hidden_size': 64,
+        'max_seq_len': 200,
+        'n_heads': 4,
+        'causal': True,
+        'output_size': 4096,
+        'n_blocks': 4
+    })
+    x = torch.ones((5, 10), dtype=torch.int)
+    y = m(x)
+    assert tuple(y.shape) == (5, 10, 4096)
