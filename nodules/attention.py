@@ -16,8 +16,7 @@ class RoPESelfAttention(nn.Module):
         self.k = nn.Linear(hidden_size, hidden_size, bias=False)
         self.v = nn.Linear(hidden_size, hidden_size, bias=False)
 
-        self.r = get_rotary_matrix(max_seq_len, hidden_size)
-        self.register_buffer('r', self.r)
+        self.register_buffer('r', get_rotary_matrix(max_seq_len, hidden_size))
         self.causal = causal
         if causal:
             self.register_buffer('tril', torch.tril(torch.ones(max_seq_len, max_seq_len)))
