@@ -107,7 +107,7 @@ class LLaMABlock(nn.Module):
         return x
 
 
-class LLaMAModel(nn.Module):
+class LORALLaMAModel(nn.Module):
     def __init__(self, config):
         super().__init__()
 
