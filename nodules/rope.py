@@ -1,12 +1,8 @@
 import torch
 import numpy as np
 
-# I'm just going to assume there's only going to be one embedding dim the entire time
-rotary_matrix = None
-MAX_CONTEXT_LENGTH = 0
 
-
-def create_rotary_matrix(max_context_length, embedding_dim):
+def get_rotary_matrix(max_context_length, embedding_dim):
     """
     Gets rotary matrix(embedding_dim = hidden_size)
 
@@ -16,7 +12,6 @@ def create_rotary_matrix(max_context_length, embedding_dim):
 
     so the BMM will come out as seq_len x B x hidden_size
     """
-
     rope = torch.zeros((max_context_length, embedding_dim, embedding_dim), requires_grad=False)
 
     # Check original paper for variable meanings
@@ -29,11 +24,3 @@ def create_rotary_matrix(max_context_length, embedding_dim):
             rope[m, 2 * i + 1, 2 * i] = np.sin(m_theta_i)
             rope[m, 2 * i + 1, 2 * i + 1] = np.cos(m_theta_i)
     return rope
-
-
-def get_rotary_matrix(max_context_length, embedding_dim):
-    global rotary_matrix
-
-    if max_context_length > MAX_CONTEXT_LENGTH:
-        rotary_matrix = create_rotary_matrix(max_context_length, embedding_dim)
-    return rotary_matrix

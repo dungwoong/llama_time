@@ -16,8 +16,7 @@ class RoPESelfAttention(nn.Module):
         self.k = nn.Linear(hidden_size, hidden_size, bias=False)
         self.v = nn.Linear(hidden_size, hidden_size, bias=False)
 
-        self.max_seq_len, self.hidden_size = max_seq_len, hidden_size
-
+        self.register_buffer('r', get_rotary_matrix(max_seq_len, hidden_size))
         self.causal = causal
         if causal:
             self.register_buffer('tril', torch.tril(torch.ones(max_seq_len, max_seq_len)))
@@ -26,15 +25,14 @@ class RoPESelfAttention(nn.Module):
 
     def forward(self, x, return_attn_weights=False):
         b, s, h = x.shape
-        r = get_rotary_matrix(self.max_seq_len, self.hidden_size)
 
         q = self.q(x)
         k = self.k(x)
         v = self.v(x)
 
         # rotate q and k
-        qr = torch.bmm(q.transpose(0, 1), r[:s]).transpose(0, 1)
-        kr = torch.bmm(k.transpose(0, 1), r[:s]).transpose(0, 1)
+        qr = torch.bmm(q.transpose(0, 1), self.r[:s]).transpose(0, 1)
+        kr = torch.bmm(k.transpose(0, 1), self.r[:s]).transpose(0, 1)
 
         # Q, K, V are B x S x H
         # each row in attn is the coefficients for the linear combination of V
