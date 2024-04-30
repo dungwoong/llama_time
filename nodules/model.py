@@ -1,8 +1,10 @@
+import torch
 from torch import nn
 import torch.nn.init as init
 
 from nodules.attention import RoPEMultiHeadAttention
 from nodules.rmsnorm import RMSNorm
+from nodules.rope import get_rotary_matrix
 from nodules.swiglu import SwiGLU
 
 
@@ -55,16 +57,16 @@ class LLaMABlock(nn.Module):
 
         self.rms = RMSNorm(config['hidden_size'], eps=1e-8)
         self.rope_attention = RoPEMultiHeadAttention(config['hidden_size'], config['max_seq_len'],
-                                                     config['n_heads'], config['causal'])
+                                                     config['n_heads'])
         self.linear = nn.Sequential(
             nn.Linear(config['hidden_size'], config['hidden_size']),
             SwiGLU(config['hidden_size'])
         )
 
-    def forward(self, x):
+    def forward(self, x, r, tril):
         # assume x is already B x seq_len x hidden_size
         x = self.rms(x)
-        x = x + self.rope_attention(x)
+        x = x + self.rope_attention(x, r, tril)
 
         x = self.rms(x)
         x = x + self.linear(x)
@@ -84,9 +86,14 @@ class LLaMAModel(nn.Module):
         self.config = config
 
         self.embedding = nn.Embedding(config['vocab_size'], config['hidden_size'])
-        self.blocks = nn.Sequential(
-            *[LLaMABlock(config) for _ in range(config['n_blocks'])]
-        )
+        self.blocks = [LLaMABlock(config) for _ in range(config['n_blocks'])]
+
+        # buffers
+        self.register_buffer('r', get_rotary_matrix(config['max_seq_len'], config['hidden_size']))
+        if config['causal']:
+            self.register_buffer('tril', torch.tril(torch.ones(config['max_seq_len'], config['max_seq_len'])))
+        else:
+            self.tril = None
 
         self.rms = RMSNorm(config['hidden_size'], eps=1e-8)
         self.final_linear = nn.Linear(config['hidden_size'], config['vocab_size'])
@@ -94,7 +101,8 @@ class LLaMAModel(nn.Module):
 
     def forward(self, x):
         x = self.embedding(x)
-        x = self.blocks(x)
+        for block in self.blocks:
+            x = block(x, self.r, self.tril)
         x = self.rms(x)
         x = self.final_linear(x)
         return x
